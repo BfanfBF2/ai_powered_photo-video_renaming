@@ -12,7 +12,11 @@
 >
 > Detailed video metadata extracting has only been tested on Panasonic GH6. Don't highly expect it to be compatible with other cameras.
 
+<img width="1732" alt="Screenshot 2025-02-16 at 19 20 46" src="https://github.com/user-attachments/assets/4d30e821-6cbb-4c78-b0e3-bf6cfa2c98f0" />
+
 ## airenamephoto.py
+
+<img width="912" alt="Screenshot 2025-02-16 at 19 19 41" src="https://github.com/user-attachments/assets/d1a459ff-42ef-4819-b045-69d57e373978" />
 
 A GUI interface based on tkinter that allows you to read exif data and rename photos with them.Optional data includes:
 
@@ -26,6 +30,8 @@ A GUI interface based on tkinter that allows you to read exif data and rename ph
 - #AI description
 
 ## airenamevideo.py
+
+<img width="912" alt="Screenshot 2025-02-16 at 19 19 44" src="https://github.com/user-attachments/assets/52c87f57-2710-41ff-b7b2-4d6922d0db1f" />
 
 A GUI interface based on tkinter that allows you to read video data and rename video clips with them.AI content recognition is based on extracting frames from videos due to the limitation that too large size video is not supported.Optional data includes:
 
