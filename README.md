@@ -35,6 +35,12 @@ A GUI interface based on tkinter that allows you to read video data and rename v
 - Frame rate
 - Codec
 - #AI description
+
 > [!NOTE]
 >
 > It is currently known that ProRes is not supported.
+
+## 10MBcompressor.py
+
+A GUI interface based on tkinter that automatically detects photos larger than 10MB (To be practical it is actually set to 9MB) and compress them to prevent from the limitation from WeChat Official Accounts editing tools.
+
