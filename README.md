@@ -50,3 +50,6 @@ A GUI interface based on tkinter that allows you to read video data and rename v
 
 A GUI interface based on tkinter that automatically detects photos larger than 10MB (To be practical it is actually set to 9MB) and compress them to prevent from the limitation from WeChat Official Accounts editing tools.
 
+<img width="712" alt="Screenshot 2025-02-16 at 19 26 06" src="https://github.com/user-attachments/assets/a31431ec-0c5f-4faf-9fa1-0e69e38bb853" />
+<img width="1167" alt="Screenshot 2025-02-16 at 19 26 25" src="https://github.com/user-attachments/assets/25642c5c-9dc7-4114-87b0-e267584f5bec" />
+
