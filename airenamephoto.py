@@ -85,6 +85,7 @@ class PhotoRenamerApp:
         self.api_key = ""
         self.ai_prompt = ""
         self.original_api_key = ""
+        self.is_showing_api = False  # 用于标记当前API Key是否显示
 
     def create_widgets(self):
         # API Key输入框
@@ -226,8 +227,8 @@ class PhotoRenamerApp:
             return
 
         if self.include_ai_description.get():
-            self.api_key = self.api_entry.get()
-            if not self.api_key:
+            self.api_key = self.original_api_key
+            if not self.api_key or self.api_key == "Your-API-Code":
                 messagebox.showerror("错误", "请输入智谱AI API Key")
                 return
 
@@ -400,20 +401,23 @@ class PhotoRenamerApp:
         return name_parts
 
     def show_api_key(self, event):
-        """当用户选中输入框时，显示真实的API Key，保持原有内容不消失"""
-        # 如果输入框内容是默认的API Key，就显示原始API Key，否则不做任何修改
-        if self.api_entry.get() == "*" * len(self.original_api_key):  # 输入框显示的是星号（表示隐藏的API Key）
-            self.api_entry.config(show='')  # 去掉星号掩码
-            self.api_entry.delete(0, tk.END)  # 清空输入框
-            self.api_entry.insert(0, self.original_api_key)  # 插入原始API Key
+        """当用户选中输入框时，显示真实的API Key"""
+        current_text = self.api_entry.get()
+        if current_text == "Your-API-Code" or current_text == "*" * len(current_text):
+            self.api_entry.config(show='')
+            self.api_entry.delete(0, tk.END)
+            self.api_entry.insert(0, self.original_api_key)
+            self.is_showing_api = True
 
     def hide_api_key(self, event):
         """当用户离开输入框时，隐藏API Key并保存原始内容"""
-        # 获取当前输入框的内容并保存
-        self.original_api_key = self.api_entry.get()
-        self.api_entry.config(show='*')  # 用星号掩码API Key
-        self.api_entry.delete(0, tk.END)  # 清空输入框
-        self.api_entry.insert(0, '*' * len(self.original_api_key))  # 用星号填充输入框
+        new_api_key = self.api_entry.get()
+        if new_api_key != "Your-API-Code":
+            self.original_api_key = new_api_key
+        self.api_entry.config(show='*')
+        self.api_entry.delete(0, tk.END)
+        self.api_entry.insert(0, '*' * len(self.original_api_key))
+        self.is_showing_api = False
 
 
 if __name__ == "__main__":
