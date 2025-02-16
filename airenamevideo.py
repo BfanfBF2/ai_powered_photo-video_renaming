@@ -10,42 +10,61 @@ import threading
 import time
 
 
+# 提取视频关键帧
+def extract_keyframe(video_path):
+    try:
+        # 使用 ffmpeg 提取视频的第一帧
+        out, _ = (
+            ffmpeg
+           .input(video_path)
+           .filter('select', 'eq(pict_type,PICT_TYPE_I)')
+           .output('pipe:', format='image2', vframes=1)
+           .run(capture_stdout=True, capture_stderr=True)
+        )
+        return out
+    except Exception as e:
+        print(f"提取关键帧时出错: {e}")
+        return None
+
+
 # 调用智谱 AI 接口获取视频描述
 def get_video_description(video_path, api_key, prompt):
     client = ZhipuAI(api_key=api_key)
     try:
-        # 读取视频文件并进行 Base64 编码
-        with open(video_path, 'rb') as video_file:
-            video_base = base64.b64encode(video_file.read()).decode('utf-8')
-        # 记录请求开始时间
-        start_time = time.time()
-        response = client.chat.completions.create(
-            model="glm-4v-plus",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "video_url",
-                            "video_url": {
-                                "url": video_base
+        # 提取关键帧
+        keyframe = extract_keyframe(video_path)
+        if keyframe:
+            # 对关键帧进行 Base64 编码
+            img_base = base64.b64encode(keyframe).decode('utf-8')
+            # 记录请求开始时间
+            start_time = time.time()
+            response = client.chat.completions.create(
+                model="glm-4v-plus",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": img_base
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": prompt
                             }
-                        },
-                        {
-                            "type": "text",
-                            "text": prompt
-                        }
-                    ]
-                }
-            ]
-        )
-        # 记录请求结束时间并计算耗时
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        print(f"请求耗时: {elapsed_time:.2f} 秒")
-        return response.choices[0].message.content
+                        ]
+                    }
+                ]
+            )
+            # 记录请求结束时间并计算耗时
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"请求耗时: {elapsed_time:.2f} 秒")
+            return response.choices[0].message.content
     except Exception as e:
-        print(f"调用API时发生错误: {e}")
+        messagebox.showerror("API 调用错误", f"调用智谱 AI 接口时出现错误: {str(e)}")
         return None
 
 
@@ -54,6 +73,8 @@ class VideoMetadataRenamer:
         self.root = root
         self.root.title("视频元数据重命名工具")
         self.root.geometry("800x700")
+
+        self.default_api_key_text = "Your-API-Code"
 
         # 创建 API Key 输入框
         self.create_api_key_input()
@@ -77,10 +98,9 @@ class VideoMetadataRenamer:
         api_frame = ttk.Frame(self.root)
         api_frame.pack(pady=10, padx=10, fill=tk.X)
 
-        ttk.Label(api_frame, text="智谱AI API Key:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(api_frame, text="智谱 AI API Key:").pack(side=tk.LEFT, padx=5)
         self.api_entry = ttk.Entry(api_frame, width=50, show='*')
-        self.api_entry.insert(0, "Your-API-Code")
-        # 绑定焦点事件
+        self.api_entry.insert(0, self.default_api_key_text)
         self.api_entry.bind("<FocusIn>", self.show_api_key)
         self.api_entry.bind("<FocusOut>", self.hide_api_key)
         self.original_api_key = self.api_entry.get()
@@ -90,9 +110,9 @@ class VideoMetadataRenamer:
         prompt_frame = ttk.Frame(self.root)
         prompt_frame.pack(pady=10, padx=10, fill=tk.X)
 
-        ttk.Label(prompt_frame, text="AI提示词:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(prompt_frame, text="AI 提示词:").pack(side=tk.LEFT, padx=5)
         self.prompt_entry = ttk.Entry(prompt_frame, width=50)
-        self.prompt_entry.insert(0, "简洁的描述视频字数10字以内，不要有任何断句")
+        self.prompt_entry.insert(0, "简洁描述关键帧 10 字内")
         self.prompt_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
     def create_directory_selection(self):
@@ -156,7 +176,7 @@ class VideoMetadataRenamer:
         self.include_ai_description = tk.BooleanVar(value=False)
         ttk.Checkbutton(
             self.metadata_frame,
-            text="使用AI描述",
+            text="使用 AI 描述",
             variable=self.include_ai_description
         ).pack(side=tk.LEFT, padx=5)
 
@@ -272,15 +292,29 @@ class VideoMetadataRenamer:
             return
 
         if self.include_ai_description.get():
-            self.api_key = self.api_entry.get()
-            if not self.api_key:
-                messagebox.showerror("错误", "请输入智谱AI API Key")
+            # 获取真实的 API Key
+            api_key_input = self.api_entry.get()
+            if api_key_input == '*' * len(self.original_api_key):
+                api_key = self.original_api_key
+            else:
+                api_key = api_key_input
+
+            if api_key == self.default_api_key_text or not api_key.strip():
+                messagebox.showerror("错误", "请输入有效的智谱 AI API Key")
                 return
 
-            self.ai_prompt = self.prompt_entry.get()
-            if not self.ai_prompt:
-                messagebox.showerror("错误", "请输入AI提示词")
+            # 简单验证 API Key 格式，可根据实际情况调整
+            if len(api_key) < 20:
+                messagebox.showerror("错误", "输入的 API Key 格式可能不正确，请检查。")
                 return
+
+            self.api_key = api_key
+
+            ai_prompt = self.prompt_entry.get()
+            if not ai_prompt.strip():
+                messagebox.showerror("错误", "请输入有效的 AI 提示词")
+                return
+            self.ai_prompt = ai_prompt
 
         self.cancel_flag = False
         self.cancel_button.config(state=tk.NORMAL)
@@ -374,38 +408,34 @@ class VideoMetadataRenamer:
         return filename
 
     def get_unique_filename(self, base_name, extension):
-        # 首先构造可能的新名字
         new_name = f"{base_name}{extension}"
         if os.path.exists(os.path.join(self.selected_dir, new_name)):
-            # 检查是否存在，且是否是带有" | "的文件名
             if " | " in base_name:
                 return new_name
-            else:
-                counter = 1
-                while True:
-                    temp_name = f"{base_name}_{counter}{extension}"
-                    if not os.path.exists(os.path.join(self.selected_dir,
-                                                       temp_name)):
-                        return temp_name
-                    counter += 1
-        else:
-            return new_name
+            counter = 1
+            while True:
+                temp_name = f"{base_name}_{counter}{extension}"
+                if not os.path.exists(os.path.join(self.selected_dir, temp_name)):
+                    return temp_name
+                counter += 1
+        return new_name
 
     def show_api_key(self, event):
-        """当用户选中输入框时，显示真实的API Key，保持原有内容不消失"""
-        # 如果输入框内容是默认的API Key，就显示原始API Key，否则不做任何修改
-        if self.api_entry.get() == "*" * len(self.original_api_key):  # 输入框显示的是星号（表示隐藏的API Key）
-            self.api_entry.config(show='')  # 去掉星号掩码
-            self.api_entry.delete(0, tk.END)  # 清空输入框
-            self.api_entry.insert(0, self.original_api_key)  # 插入原始API Key
+        if self.api_entry.get() == '*' * len(self.original_api_key):
+            self.api_entry.config(show='')
+            self.api_entry.delete(0, tk.END)
+            self.api_entry.insert(0, self.original_api_key)
 
     def hide_api_key(self, event):
-        """当用户离开输入框时，隐藏API Key并保存原始内容"""
-        # 获取当前输入框的内容并保存
-        self.original_api_key = self.api_entry.get()
-        self.api_entry.config(show='*')  # 用星号掩码API Key
-        self.api_entry.delete(0, tk.END)  # 清空输入框
-        self.api_entry.insert(0, '*' * len(self.original_api_key))  # 用星号填充输入框
+        api_key = self.api_entry.get()
+        if api_key != self.default_api_key_text and api_key.strip():
+            self.original_api_key = api_key
+        self.api_entry.config(show='*')
+        self.api_entry.delete(0, tk.END)
+        if self.original_api_key == self.default_api_key_text:
+            self.api_entry.insert(0, self.default_api_key_text)
+        else:
+            self.api_entry.insert(0, '*' * len(self.original_api_key))
 
 
 if __name__ == "__main__":
