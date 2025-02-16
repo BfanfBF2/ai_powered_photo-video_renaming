@@ -35,3 +35,6 @@ A GUI interface based on tkinter that allows you to read video data and rename v
 - Frame rate
 - Codec
 - #AI description
+> [!NOTE]
+>
+> It is currently known that ProRes is not supported.
