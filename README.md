@@ -27,7 +27,7 @@ A GUI interface based on tkinter that allows you to read exif data and rename ph
 
 ## airenamevideo.py
 
-A GUI interface based on tkinter that allows you to read video data and rename video clips with them.AI content recognition is based on extracting frames from videos due to too large size is not supported.Optional data includes:
+A GUI interface based on tkinter that allows you to read video data and rename video clips with them.AI content recognition is based on extracting frames from videos due to the limitation that too large size video is not supported.Optional data includes:
 
 - Date&Time
 - Camera Model
