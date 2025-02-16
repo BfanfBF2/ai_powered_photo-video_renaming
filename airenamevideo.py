@@ -10,17 +10,18 @@ import threading
 import time
 
 
-# 提取视频关键帧
 def extract_keyframe(video_path):
     try:
         # 使用 ffmpeg 提取视频的第一帧
-        out, _ = (
+        out, err = (
             ffmpeg
-           .input(video_path)
-           .filter('select', 'eq(pict_type,PICT_TYPE_I)')
-           .output('pipe:', format='image2', vframes=1)
-           .run(capture_stdout=True, capture_stderr=True)
+            .input(video_path)
+            .filter('select', 'eq(pict_type,PICT_TYPE_I)')
+            .output('pipe:', format='image2', vframes=1)
+            .run(capture_stdout=True, capture_stderr=True)
         )
+        if err:
+            print(f"ffmpeg 错误信息: {err.decode('utf-8')}")
         return out
     except Exception as e:
         print(f"提取关键帧时出错: {e}")
@@ -32,10 +33,10 @@ def get_video_description(video_path, api_key, prompt):
     client = ZhipuAI(api_key=api_key)
     try:
         # 提取关键帧
-        keyframe = extract_keyframe(video_path)
-        if keyframe:
+        keyframes = extract_keyframe(video_path)
+        if keyframes:
             # 对关键帧进行 Base64 编码
-            img_base = base64.b64encode(keyframe).decode('utf-8')
+            img_base = base64.b64encode(keyframes).decode('utf-8')
             # 记录请求开始时间
             start_time = time.time()
             response = client.chat.completions.create(
