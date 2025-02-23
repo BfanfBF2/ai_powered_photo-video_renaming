@@ -4,6 +4,10 @@
 
 **Please let me know if you encounter any issues!**
 
+> [!IMPORTANT]
+>
+> Install exiftool before using!
+
 > [!NOTE]
 >
 > Please note that you need to get an API from ZhipuAI for AI renaming function.
